@@ -1,0 +1,53 @@
+function createHubSpotEvent() {
+  var spreadsheetId = 'SpreasheetID'; // Replace with your spreadsheet ID
+  var sheetName = 'Events'; // Name of the sheet containing event data
+  var sheet = SpreadsheetApp.openById(spreadsheetId).getSheetByName(sheetName);
+  var lastRow = sheet.getLastRow();
+  
+  // Retrieve the last processed row
+  var scriptProperties = PropertiesService.getScriptProperties();
+  var lastProcessedRow = scriptProperties.getProperty('lastProcessedRow');
+  if (!lastProcessedRow) {
+    lastProcessedRow = 1; // Start from the first row if no previous processing
+  } else {
+    lastProcessedRow = parseInt(lastProcessedRow) + 1; // Start from the next row after the last processed
+  }
+  
+  var range = sheet.getRange('A' + lastProcessedRow + ':A' + lastRow); // Assuming 'event_title' is in column A
+  var values = range.getValues();
+  
+  var apiKey = 'HubSpot_API_key'; // Replace with your actual HubSpot API key
+  var hubspotEndpoint = 'https://api.hubapi.com/crm/v3/objects/YourObjectID'; // HubSpot endpoint for creating events (replace 'YourObjectID' with HubSpot obejct ID)
+  
+  for (var i = 0; i < values.length; i++) {
+    var eventTitle = values[i][0];
+    
+    // Check if the event title exists and is not empty
+    if (eventTitle && eventTitle !== '') {
+      var postData = {
+        "properties": {
+          "event_title": eventTitle
+          // Add more properties as needed for other event fields
+        }
+      };
+      
+      var options = {
+        'method': 'post',
+        'contentType': 'application/json',
+        'payload': JSON.stringify(postData),
+        'headers': {
+          'Authorization': 'Bearer ' + apiKey
+        }
+      };
+      
+      // Make API request to create event in HubSpot
+      var response = UrlFetchApp.fetch(hubspotEndpoint, options);
+      Logger.log(response.getContentText()); // Log the response (for debugging)
+      
+      // You can add error handling and other logic here
+    }
+  }
+  
+  // Update the last processed row in PropertiesService
+  scriptProperties.setProperty('lastProcessedRow', lastRow);
+}
